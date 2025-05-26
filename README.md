@@ -22,7 +22,7 @@ import { RedisPlugin } from "@sigiljs-community/redis-plugin"
 
 const app = new Sigil()
 
-// Register the OpenAPI plugin with optional settings
+// Register the plugin with optional settings
 app.addPlugin(RedisPlugin, {
   /**
    * Redis connect URI
