@@ -46,7 +46,7 @@ export default class RedisPlugin extends SigilPlugin<RedisPluginConfig> {
     this.logger({
       level: "info",
       message: `Successfully connected to redis instance in ${ Math.round(consumed * 1000) / 1000 }ms`,
-      json: { milestone: "redis", ok: true, time: consumed }
+      json: { milestone: "connect", ok: true, time: consumed }
     })
   }
 
