@@ -1,0 +1,58 @@
+{
+  "name": "@sigiljs-community/redis-plugin",
+  "version": "0.0.0",
+  "description": "Plugin for SigilJS framework that provides template-based Redis interactions",
+  "main": "dist/openapi-plugin.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "vite build -- --production"
+  },
+  "engines": {
+    "node": ">=24.0.2"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/redis-plugin.mjs",
+      "require": "./dist/redis-plugin.js"
+    }
+  },
+  "keywords": [
+    "typescript",
+    "generator",
+    "plugin",
+    "sigiljs",
+    "openapi",
+    "openapi-3",
+    "sigiljs-plugin"
+  ],
+  "author": "Kurai Foundation",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5",
+    "vite-plugin-dts": "^4.5.4",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.1.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sigiljs-community/openapi-plugin.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/sigiljs-community/openapi-plugin/issues"
+  },
+  "homepage": "https://github.com/sigiljs-community/openapi-plugin#readme",
+  "dependencies": {
+    "@sigiljs/seal": "^1.0.7",
+    "@sigiljs/sigil": "^0.1.11",
+    "redis": "^5.1.0"
+  }
+}
