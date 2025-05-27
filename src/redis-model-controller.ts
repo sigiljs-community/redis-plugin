@@ -1,5 +1,6 @@
 import { ArraySchema, BasePrimitive, NullableSchema, ObjectSchema, seal } from "@sigiljs/seal"
 import { InferSchema } from "@sigiljs/seal/types"
+import { Sigil } from "@sigiljs/sigil"
 import { jsonStringify } from "@sigiljs/sigil/utils"
 import { createHash } from "node:crypto"
 import { RedisClientType } from "redis"
@@ -25,12 +26,15 @@ interface RedisSchemaOptions {
  * and interactions with Redis for a given schema template.
  */
 class RedisSchemaExecutor<T extends RedisTemplate> {
+  protected client: () => RedisClientType<any, any, any, any, any>
 
   constructor(
-    protected readonly client: RedisClientType<any, any, any, any, any>,
+    client: () => RedisClientType<any, any, any, any, any>,
     protected readonly template: T,
     protected readonly options: Required<Omit<RedisSchemaOptions, "ttl">> & { ttl?: number }
-  ) {}
+  ) {
+    this.client = client
+  }
 
   /**
    * Compresses and writes the specified value to Redis.
@@ -43,9 +47,9 @@ class RedisSchemaExecutor<T extends RedisTemplate> {
     await this.waitInitialization()
     const serializedValue = jsonStringify(this.serialize(value), { throw: true })
     if (typeof this.options.ttl === "number") {
-      this.client.setEx(this.fullKey(key), this.options.ttl, serializedValue)
+      this.client().setEx(this.fullKey(key), this.options.ttl, serializedValue)
     }
-    else this.client.set(this.fullKey(key), serializedValue)
+    else this.client().set(this.fullKey(key), serializedValue)
 
     return key
   }
@@ -60,7 +64,7 @@ class RedisSchemaExecutor<T extends RedisTemplate> {
    */
   public async get<F extends boolean | undefined>(key: string, force?: F): Promise<F extends true ? InferSchema<T> : InferSchema<T> | null> {
     await this.waitInitialization()
-    const rawValue = await this.client.get(this.fullKey(key))
+    const rawValue = await this.client().get(this.fullKey(key))
     if (!rawValue) {
       if (force) throw new Error(`Key ${ key } not found`)
 
@@ -80,7 +84,7 @@ class RedisSchemaExecutor<T extends RedisTemplate> {
    */
   public async delete(key: string) {
     await this.waitInitialization()
-    return this.client.del(key)
+    return this.client().del(key)
   }
 
   /**
@@ -110,7 +114,7 @@ class RedisSchemaExecutor<T extends RedisTemplate> {
        * @returns generated Redis key (without namespace).
        */
       set(value: InferSchema<T>): Promise<string> {
-        const key = crypto.randomBytes(8).toString("base64url")
+        const key = crypto.randomBytes(Sigil.redis.randomKeyBytesCount || 16).toString("base64url")
         return executor.set(key, value)
       }
     }
@@ -122,14 +126,25 @@ class RedisSchemaExecutor<T extends RedisTemplate> {
 
   private serialize(payload: any): Array<any> {
     if (typeof payload !== "object") return payload
-    return Object.values(payload).map(v => typeof v === "object" ? this.serialize(v) : v)
+
+    const schemaShapeKeys = Object.keys(seal.exportMetadataOf(this.template).shape || {})
+    if (schemaShapeKeys.length) {
+      const response: any[] = []
+      for (const key of schemaShapeKeys) {
+        const v = payload[key]
+        response.push((v && typeof v === "object") ? this.serialize(v) : v)
+      }
+      return response
+    }
+
+    return Object.values(payload).map(v => (v && typeof v === "object") ? this.serialize(v) : v)
   }
 
   /**
    * Returns a promise that resolves when redis client is ready
    */
   private async waitInitialization() {
-    if (this.client.isReady) return
+    if (this.client().isReady) return
 
     let attempt = 0
     return new Promise<void>(resolve => {
@@ -141,7 +156,7 @@ class RedisSchemaExecutor<T extends RedisTemplate> {
             " app starts listening BEFORE any redis interactions")
         }
 
-        if (!this.client.isReady) return
+        if (!this.client().isReady) return
 
         clearInterval(interval)
         resolve()
@@ -167,7 +182,7 @@ class RedisSchema<T extends RedisTemplate> extends RedisSchemaExecutor<T> {
    * @param template seal schema template
    * @param options schema options
    */
-  constructor(client: RedisClientType<any, any, any, any, any>, template: T, options?: RedisSchemaOptions) {
+  constructor(client: () => RedisClientType<any, any, any, any, any>, template: T, options?: RedisSchemaOptions) {
     const namespace = options?.namespace ?? createHash("shake256", { outputLength: 8 })
       .update(jsonStringify([seal.exportMetadataOf(template), options || {}], { throw: true }))
       .digest("base64url")
@@ -186,6 +201,8 @@ class RedisSchema<T extends RedisTemplate> extends RedisSchemaExecutor<T> {
  * Redis controller
  */
 export default class RedisModelController {
+  public randomKeyBytesCount = 16
+
   private client!: RedisClientType<any, any, any, any, any>
 
   constructor(client?: RedisClientType<any, any, any, any, any>) {
@@ -221,7 +238,7 @@ export default class RedisModelController {
    * @returns a RedisSchema instance for data operations.
    */
   public defineSchema<T extends RedisTemplate>(template: T, options?: RedisSchemaOptions): RedisSchema<T> {
-    return new RedisSchema(this.client, template, options)
+    return new RedisSchema(() => this.client, template, options)
   }
 
   /**

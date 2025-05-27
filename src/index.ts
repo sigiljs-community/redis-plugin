@@ -8,7 +8,7 @@ declare module "@sigiljs/sigil" {
   }
 }
 
-Object.defineProperty(Sigil, "redis", {
+if (!("redis" in Sigil)) Object.defineProperty(Sigil, "redis", {
   value: new RedisModelController(),
   writable: false,
   configurable: false,
