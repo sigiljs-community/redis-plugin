@@ -49,12 +49,7 @@
   "homepage": "https://github.com/sigiljs-community/redis-plugin#readme",
   "dependencies": {
     "@sigiljs/seal": "^1.0.7",
-    "@sigiljs/sigil": "^0.2.0-rc.1",
-    "redis": "^5.1.0"
-  },
-  "peerDependencies": {
     "@sigiljs/sigil": "^0.2.0",
-    "@sigiljs/seal": "^1.0.7",
     "redis": "^5.1.0"
   }
 }
