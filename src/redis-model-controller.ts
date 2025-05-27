@@ -186,7 +186,11 @@ class RedisSchema<T extends RedisTemplate> extends RedisSchemaExecutor<T> {
  * Redis controller
  */
 export default class RedisModelController {
-  constructor(private readonly client: RedisClientType<any, any, any, any, any>) {}
+  private client!: RedisClientType<any, any, any, any, any>
+
+  constructor(client?: RedisClientType<any, any, any, any, any>) {
+    if (client) this.client = client
+  }
 
   /**
    * Creates a new object schema template compatible with Seal.
@@ -196,6 +200,10 @@ export default class RedisModelController {
    */
   public defineTemplate<T extends { [key: string]: RedisTemplate }>(template: T): ObjectSchema<T> {
     return seal.object(template)
+  }
+
+  public attachClient(client: RedisClientType<any, any, any, any, any>) {
+    this.client = client
   }
 
   /**

@@ -1,7 +1,6 @@
 import { Sigil, SigilPlugin } from "@sigiljs/sigil"
 import { RedisClientOptions, RedisClientType } from "redis"
 import * as redis from "redis"
-import RedisModelController from "./redis-model-controller"
 
 export interface RedisPluginConfig {
   /** Redis client configuration options */
@@ -30,12 +29,7 @@ export default class RedisPlugin extends SigilPlugin<RedisPluginConfig> {
       })
     })
 
-    Object.defineProperty(Sigil, "redis", {
-      value: new RedisModelController(this.#redisClient),
-      writable: false,
-      configurable: false,
-      enumerable: true
-    })
+    Sigil.redis.attachClient(this.#redisClient)
   }
 
   public async onInitialize() {
