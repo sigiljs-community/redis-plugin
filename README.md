@@ -1,5 +1,10 @@
 # Sigil Redis Plugin
 
+> [!WARNING]
+> Schema-based redis abstraction plugin for SigilJS is now deprecated. Please use `@kurai-io/redis` instead
+> 
+> https://github.com/kurai-foundation/redis
+
 Plugin for SigilJS framework that provides template-based Redis interactions
 
 
